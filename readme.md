@@ -28,3 +28,14 @@ I can't have two chat/socket infrastructure.
   grunt watch-dev
   ```
   in the console.
+  
+### Grunt Tasks
+
+watch
+: watches all sources and run test at the end
+
+watch-dev
+: run test first, and then watch all sources
+
+test
+: run test
