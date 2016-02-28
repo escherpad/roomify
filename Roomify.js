@@ -15,21 +15,22 @@ var TransformConstructor = function (room) {
 };
 
 
-function Roomify(config, primus) {
-    if (typeof config.thisQue === "undefined") throw Error('need "thisQue" in roomify config');
-    if (typeof config.agents === "undefined") throw Error('need "agents" in roomify config');
-    if (typeof config.collections === "undefined") throw Error('need "collections" in roomify config');
+function Roomify(roomifyConfig, primus, messageQue) {
+    if (typeof roomifyConfig.thisQue === "undefined") throw Error('need "thisQue" in roomify config');
+    if (typeof roomifyConfig.agents === "undefined") throw Error('need "agents" in roomify config');
+    if (typeof roomifyConfig.collections === "undefined") throw Error('need "collections" in roomify config');
 
-    var agents = new Agents(config.agents.add, config.agents.findOne, config.agents.find);
+    var agents = new Agents(roomifyConfig.agents.add, roomifyConfig.agents.findOne, roomifyConfig.agents.find);
 
 
-    forEach(config.collections, function (config) {
-        config.room = new Rooms(config);
+    forEach(roomifyConfig.collections, function (_config) {
+        _config.que = roomifyConfig.thisQue;
+        _config.room = new Rooms(_config);
     });
 
-    var dispatch = Dispatch(config.thisQue, primus, agents, config.collections);
-    var socketRouter = SocketRouter(config.thisQue, primus, dispatch);
-    var messageQueRouter = MessageQueRouter(config.thisQue, primus, dispatch);
+    var dispatch = Dispatch(roomifyConfig.thisQue, primus, messageQue, agents, roomifyConfig.collections);
+    var socketRouter = SocketRouter(roomifyConfig.thisQue, dispatch);
+    var messageQueRouter = MessageQueRouter(roomifyConfig.thisQue, dispatch);
 
     return {
         dispatch: dispatch,

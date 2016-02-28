@@ -2,7 +2,6 @@
  * Created by ge on 5/18/15.
  */
 var _ = require('lodash'),
-// server setup library files
     http = require('http'),
     express = require('express'),
     mongoose = require('mongoose'),
@@ -12,13 +11,7 @@ var _ = require('lodash'),
     expect = require('expect.js'),
     should = require('should');
 var Roomify = require('../Roomify');
-var prefix = require('superagent-prefix');
 
-var transformers = require('../transformers/transformers.js');
-var TransformConstructor = function (room) {
-    room.before('join', transformers.join);
-    room.before('leave', transformers.leave);
-};
 var socketConfig = {
     pathname: '/api/v1/stream',
     transformer: 'engine.io'
@@ -29,20 +22,13 @@ var AgentModel = ModelBuilder({
     que: String,
     spark: String,
     __index__: [
-        {
-            'user': 1,
-            'que': 1,
-            __options__: {unique: false}
-        }
+        {   'user': 1, 'que': 1, __options__: { unique: false } }
     ]
 }, 'Agent');
 
-var Schema = mongoose.Schema;
 var UserAccessFragment = ModelBuilder.SchemaBuilder({
     username: String,
-    __options__: {
-        _id: false
-    }
+    __options__: {  _id: false  }
 }, 'UserAccessFragment');
 
 var NoteModel = ModelBuilder({
@@ -57,6 +43,34 @@ var userMockData = {
     user1: {username: 'user1'},
     user2: {username: 'user2'},
     user3: {username: 'user3'}
+};
+
+var roomifyConfig = {
+    thisQue: null,
+    agents: {
+        add: function (agent, callback) {
+            var _agent = new AgentModel(agent);
+            return _agent.save(callback);
+        },
+        findOne: function (query, callback) {
+            AgentModel.findOne(query, callback);
+        },
+        find: function (query, callback) {
+            AgentModel.find(query, callback);
+        }
+    },
+    collections: [{
+        collection: 'note',
+        //que: null,
+        keys: {
+            key: '_id',
+            que: '_que',
+            users: 'users',
+            pluck: 'username'
+        },
+        //TransformConstructor: TransformConstructor,
+        Model: NoteModel
+    }]
 };
 
 function Server(instanceId, thisQue, MockUserList, fn) {
@@ -77,34 +91,7 @@ function Server(instanceId, thisQue, MockUserList, fn) {
     var server = http.createServer(app);
     var primus = new Primus(server, socketConfig);
 
-    var roomifyConfig = {
-        thisQue: thisQue,
-        agents: {
-            add: function (agent, callback) {
-                var _agent = new AgentModel(agent);
-                return _agent.save(callback);
-            },
-            findOne: function (query, callback) {
-                AgentModel.findOne(query, callback);
-            },
-            find: function (query, callback) {
-                AgentModel.find(query, callback);
-            }
-        },
-        collections: [{
-            collection: 'note',
-            que: thisQue,
-            keys: {
-                key: '_id',
-                que: '_que',
-                users: 'users',
-                pluck: 'username'
-            },
-            TransformConstructor: TransformConstructor,
-            Model: NoteModel
-        }]
-    };
-    var roomify = Roomify(roomifyConfig, primus);
+    var roomify = Roomify(_.extend({}, roomifyConfig, {thisQue: thisQue}), primus, null);
 
     primus.before('attachUser', AttachUserMock(MockUserList));
     primus.on('connection', function (spark) {
@@ -113,9 +100,9 @@ function Server(instanceId, thisQue, MockUserList, fn) {
             console.log('socket connection rejected. user not logged in.');
             spark.end({error: 'user not logged in.'}, {reconnect: false});
         } else {
-            console.log('socket connection accepted. --------- Que: ', thisQue, ' user: ', req.user.username, ' sparkId: ', spark.id);
+            console.log('==> socket connection accepted. Que: ', thisQue, ' user: ', req.user.username, ' sparkId: ', spark.id);
             roomify.agents.add(thisQue, req.user.username, spark.id, function (err, doc) {
-                //console.log('agent.add err: ', err, '\n doc: ', doc);
+                console.log('agent.add err: ', err, '\n doc: ', doc);
             });
         }
         //console.log('the spark id is: ', spark.id);
@@ -152,6 +139,7 @@ function Server(instanceId, thisQue, MockUserList, fn) {
 }
 
 var server0, server1;
+
 var messages = {
     toUser1: {
         to: {user: 'user1'},
@@ -162,6 +150,7 @@ var messages = {
         text: 'Oh, what a day! What a lovely day!'
     }
 };
+
 var serverSetups = {
     server0: function (done) {
         console.log('server0 is up and running...');

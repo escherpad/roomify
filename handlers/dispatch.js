@@ -2,9 +2,8 @@
 
 var _ = require('lodash');
 var async = require('async');
-var messageQue = require('wascally');
 
-module.exports = function dispatch(thisQue, primus, agents, collections) {
+module.exports = function dispatch(thisQue, primus, messageQue, agents, collections) {
     var chatExchange = 'ep.chat';
     var dispatch;
 

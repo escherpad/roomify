@@ -1,5 +1,5 @@
 "use strict";
-module.exports = function messageQueRouter(thisQue, primus, dispatch) {
+module.exports = function messageQueRouter(thisQue, dispatch) {
     return function (rawMessage) {
         console.log('messageQue handler got message!');
         rawMessage.ack();

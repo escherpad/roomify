@@ -1,5 +1,5 @@
 "use strict";
-module.exports = function socketRouter(thisQue, primus, dispatch) {
+module.exports = function socketRouter(thisQue, dispatch) {
     var chatExchange = 'ep.chat';
     return function (message) {
         //console.log('socketRouter: message: ', message);

@@ -1,6 +1,7 @@
 {
   "name": "roomify",
   "version": "1.0.0",
+  "main": "Roomify.js",
   "dependencies": {
     "lodash": "^4.5.1"
   },

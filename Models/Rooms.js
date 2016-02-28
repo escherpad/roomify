@@ -97,7 +97,7 @@ Rooms.prototype.get = function (key, callback, noCache) {
             return that.RoomModel.findOne(query, function (err, doc) {
                 if (err || !doc) return callback(err, doc);
                 Constructor(doc, that.keys, that.que);
-                that.TransformConstructor.call(that, doc);
+                if (that.TransformConstructor) that.TransformConstructor.call(that, doc);
                 that.rooms[key] = doc;
                 return callback(err, doc);
             });
@@ -109,7 +109,7 @@ Rooms.prototype.get = function (key, callback, noCache) {
         return that.RoomModel.findOne(query, function (err, doc) {
             if (err || !doc) return callback(err, doc);
             Constructor(doc, that.keys, that.que);
-            that.TransformConstructor.call(that, doc);
+            if (that.TransformConstructor) that.TransformConstructor.call(that, doc);
             that.rooms[key] = doc;
             callback(err, doc);
         })
@@ -127,7 +127,7 @@ Rooms.prototype.getByQue = function (que, callback, noCache) {
             docs.map(function (doc) {
                 if (!doc.name) return;
                 Constructor(doc, that.keys, that.que);
-                TransformConstructor.call(that, doc);
+                if (that.TransformConstructor) that.TransformConstructor.call(that, doc);
                 that.rooms[doc[field.key]] = doc;
             });
         }
