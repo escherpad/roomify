@@ -88,9 +88,11 @@ function Server(instanceId, thisQue, MockUserList, fn) {
             var _agent = new AgentModel(agent);
             return _agent.save(callback);
         },
-
-        function (username, callback) {
-            AgentModel.findOne({username: username}, callback);
+        function (query, callback) {
+            AgentModel.findOne(query, callback);
+        },
+        function (query, callback) {
+            AgentModel.find(query, callback);
         });
     var noteConfig = {
         collection: 'note',
@@ -174,7 +176,7 @@ var server0, server1;
 var messages = {
     toUser1: {
         to: {user: 'user1'},
-        text: 'It is a great day out there!'
+        text: 'Oh, what a day! What a lovely day!'
     },
     toUser2: {
         to: {user: 'user2'},
@@ -196,7 +198,7 @@ async.parallel(serverSetups, function (err, results) {
     console.log('server setup just finished.');
     server0.dispatch.toQue = function (message, que) {
         console.log('server0 dispatch toQue is called');
-        console.log('message: ', message);
+        console.log('dispatch.toQue mock: message: ', message);
         var queMessage = {};
         queMessage.ack = function () {
             console.log('message is acknowledged.');
@@ -208,13 +210,13 @@ async.parallel(serverSetups, function (err, results) {
     };
     server1.dispatch.toQue = function (message, que) {
         console.log('server1 dispatch toQue is called');
-        console.log('message: ', message);
+        console.log('dispatch.toQue mock: message: ', message);
         var queMessage = {};
         queMessage.ack = function () {
             console.log('message is acknowledged.');
         };
         queMessage.body = message;
-        if (typeof que === 'undefined') que = message._routing.que;
+        if (typeof que === 'undefined') que = message.to.que;
         console.log('the que is: ', que);
         if (que === '0') server0.messageQueRouter(queMessage);
     };
@@ -271,7 +273,7 @@ if (typeof describe !== 'undefined') {
             clientA.write(messages.toUser2);
             clientA.on('data', function (message) {
                 console.log('client A received message: ', message);
-                if (message.to.user === 'user2') {
+                if (message.to.user === 'user1') {
                     result.push('clientA');
                     check();
                 }
@@ -285,7 +287,7 @@ if (typeof describe !== 'undefined') {
             });
             clientC.on('data', function (message) {
                 console.log('client C received message: ', message);
-                if (message.to.user === 'user2') {
+                if (message.to.user === 'user1') {
                     result.push('clientC');
                     check();
                 }
@@ -358,10 +360,10 @@ if (typeof describe !== 'undefined') {
             var result = [];
 
             function check() {
-                if (_.contains(result, 'clientA') &&
-                    _.contains(result, 'clientB') &&
-                    _.contains(result, 'clientD') &&
-                    _.contains(result, 'clientE')) {
+                if (_.includes(result, 'clientA') &&
+                    _.includes(result, 'clientB') &&
+                    _.includes(result, 'clientD') &&
+                    _.includes(result, 'clientE')) {
                     done();
                 }
                 console.log(result);

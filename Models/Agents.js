@@ -12,11 +12,13 @@ var _ = require('lodash');
 //
 // 4. agents.
 
-var Agents = function (addAgentRecord, findAgentRecord) {
-    if (!findAgentRecord) throw Error('findAgentRecord is missing');
-    this.findAgentRecord = findAgentRecord;
+var Agents = function (addAgentRecord, findOneAgentRecord, findAgentRecord) {
     if (!addAgentRecord) throw Error('findAgentRecord is missing');
     this.addAgentRecord = addAgentRecord;
+    if (!findOneAgentRecord) throw Error('findOneAgentRecord is missing');
+    this.findOneAgentRecord = findOneAgentRecord;
+    if (!findAgentRecord) throw Error('findAgentRecord is missing');
+    this.findAgentRecord = findAgentRecord;
     this.agents = {};
     this.sparks = {};
     this.ques = {};
@@ -68,7 +70,7 @@ Agents.prototype.remove = function (que, username, sparkId, callback) {
             }
         }
     }
-    this.findAgentRecord(username, function (err, doc) {
+    this.findOneAgentRecord(query, function (err, doc) {
         if (err) console.log('findAgentModel error: ', err);
         if (err || !doc && typeof callback === 'function') callback(err, 'Agents.remove: doc is not found');
         if (doc) {
@@ -94,11 +96,12 @@ Agents.prototype.remove = function (que, username, sparkId, callback) {
 };
 
 Agents.prototype.get = function (username, callback, noCache) {
+    var query = {user: username};
     var that = this;
     if (!noCache) {
         var agents = _.filter(this.agents, query);
         if (!agents || agents.length === 0) {
-            return this.findAgentRecord(username, function (err, docs) {
+            return this.findAgentRecord(query, function (err, docs) {
                 if (err) console.log('inside AgentModel.find callback.', err, '\n docs: ', docs);
                 if (docs) {
                     that.agents[username] = docs;
@@ -112,7 +115,7 @@ Agents.prototype.get = function (username, callback, noCache) {
         }
     } else {
         console.log('Agents.get: not using cache');
-        return this.findAgentRecord(username, function (err, docs) {
+        return this.findAgentRecord(query, function (err, docs) {
             if (err) console.log('inside AgentModel.find callback.', err, '\n docs: ', docs);
             if (docs) {
                 that.agents[username] = docs;

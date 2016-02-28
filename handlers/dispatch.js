@@ -4,16 +4,13 @@ var _ = require('lodash');
 var async = require('async');
 var messageQue = require('wascally');
 
-module.exports = function dispatch (thisQue, primus, agents, collections) {
+module.exports = function dispatch(thisQue, primus, agents, collections) {
     var chatExchange = 'ep.chat';
     var dispatch;
 
-    function capitalize(s) {
-        return s[0].toUpperCase() + s.slice(1);
-    }
-
     dispatch = {
         toSparks: function (message, sparkIds, username) {
+            console.log('============================toSparks=============================');
             if (!sparkIds) sparkIds = message.to._sparks || [message.to._spark];
             var spark, missing = [];
             for (var i = 0; i < sparkIds.length; i++) {
@@ -38,6 +35,7 @@ module.exports = function dispatch (thisQue, primus, agents, collections) {
             return this;
         },
         toQue: function (message, que) {
+            console.log('============================toQue=============================');
             if (!que)  que = message.to._que; // mostly not used
             messageQue.publish(chatExchange, que, message);
             return this;
@@ -62,13 +60,14 @@ module.exports = function dispatch (thisQue, primus, agents, collections) {
             return this;
         },
         toUsers: function (message, usernames, local) {
+            console.log('============================toUsers=============================');
             if (!usernames) usernames = message.to.users || [message.to.user];
-            //console.log('dispatch.toUsers: message: ', message);
+            console.log('dispatch.toUsers: message: ', message);
             var that = this;
             usernames.map(function (username) {
-                //console.log('getting user sparks for user: ', username);
+                console.log('getting user sparks for user: ', username);
                 agents.getUserSparks(username, thisQue, function (err, sparkIds) {
-                    //console.log('sparkIds for ' + username + ': in que: ' + thisQue + ' --------------', sparkIds);
+                    console.log('sparkIds for ' + username + ': in que: ' + thisQue + ' --------------', sparkIds);
                     that.toSparks(message, sparkIds, username);
                 });
             });
@@ -76,6 +75,7 @@ module.exports = function dispatch (thisQue, primus, agents, collections) {
             var usedQues = [];
             usernames.map(function (username) {
                 agents.getUserQues(username, function (err, userQues) {
+                    console.log('======> userQues: ', userQues);
                     that.toQues(message, userQues, usedQues);
                 });
             });

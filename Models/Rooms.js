@@ -5,11 +5,6 @@
 var _ = require('lodash');
 var async = require('async');
 
-// example
-//var room = new Room('chat room 6');
-//room.transform(message).broadcast();
-//room.exclude('yang.ge').transform(message).broadcast();
-
 module.exports = function Rooms (thisQue, keys, agents, TransformConstructor, RoomModel) {
 
     function Constructor(room) {
@@ -20,8 +15,8 @@ module.exports = function Rooms (thisQue, keys, agents, TransformConstructor, Ro
         room.save();
 
         room.getUsers = function () {
-            if (keys.map) {
-                return _.map(this[keys.users], keys.map);
+            if (keys.pluck) {
+                return _.map(this[keys.users], keys.pluck);
             } else {
                 return this[keys.users];
             }

@@ -1,14 +1,8 @@
-/**
- * Created by ge on 5/18/15.
- */
-
-require('amdefine/intercept', 'sleep');
+/** Created by ge on 5/18/15. */
 
 var http = require('http'),
     express = require('express'),
     Primus = require('Primus');
-
-var apiPrefix = '/api/v1/';
 
 var socketConfig = {
     pathname: '/api/v1/stream',
