@@ -1,35 +1,17 @@
 /**
  * Created by ge on 5/18/15.
  */
-
-require('amdefine/intercept', 'sleep');
-
-var _ = require('underscore'),
+var _ = require('lodash'),
 // server setup library files
     http = require('http'),
     express = require('express'),
     mongoose = require('mongoose'),
-    SchemaModels = require('.././models/SchemaModels.js'),
-    NoteModel = require('.././note/NoteModel.js'),
     AttachUserMock = require('../primus-middlewares/attachUserMock.js'),
     async = require('async'),
     Primus = require('Primus'),
     expect = require('expect.js'),
-    should = require('should'),
-    userRoles = require('../../components/rolesHelper/rolesHelper.js').userRoles,
-    accessLevels = require('../../components/rolesHelper/rolesHelper.js').accessLevels,
-    authData = require('.././user/auth.data.js');
-var request = require('superagent');
-//var nocache = require('superagent-no-cache');
+    should = require('should');
 var prefix = require('superagent-prefix');
-//var request = require('supertest');
-//var app = require('../app.js');
-
-var apiPrefix = '/api/v1/';
-
-// this breaks the reference with auth.data.js
-authData = _.extend({}, authData);
-
 
 var Agents = require('../Models/Agents.js');
 var Rooms = require('../Models/Rooms.js');
@@ -45,14 +27,49 @@ var socketConfig = {
     pathname: '/api/v1/stream',
     transformer: 'engine.io'
 };
-function Server(instanceId, thisQue, authData, fn) {
+var ModelBuilder = require('mongoose-model-builder');
+var AgentModel = ModelBuilder({
+    user: String,
+    que: String,
+    spark: String,
+    __index__: [
+        {
+            'user': 1,
+            'que': 1,
+            __options__: {unique: false}
+        }
+    ]
+}, 'Agent');
+
+var Schema = mongoose.Schema;
+var UserAccessFragment = ModelBuilder.SchemaBuilder({
+    username: String,
+    __options__: {
+        _id: false
+    }
+}, 'UserAccessFragment');
+
+var NoteModel = ModelBuilder({
+    title: String,
+    text: String,
+    users: [UserAccessFragment],
+    usersLocal: [UserAccessFragment]
+}, 'Note');
+
+var userMockData = {
+    user1: {username: 'user1'},
+    user2: {username: 'user2'},
+    user3: {username: 'user3'}
+};
+
+function Server(instanceId, thisQue, MockUserList, fn) {
     var serverQue = ['chat-q', (instanceId || 0)].join('-');
     var thisQue = String(instanceId || 0);
     var app = express();
     app.set('port', 8000 + instanceId);
 
     // connect to the database
-    var db_url = process.env.EP_MONGODB_URI || process.env.EP_MONGODB_URI_TEST || 'mongodb://localhost:27017/escherpadDB';
+    var db_url = process.env.EP_MONGODB_URI || process.env.EP_MONGODB_URI_TEST || 'mongodb://localhost:27017/roomifyTestDB';
     console.log('database: ' + db_url);
     mongoose.connect(db_url, function (err) {
         console.log('mongoose: Database is connected');
@@ -66,7 +83,15 @@ function Server(instanceId, thisQue, authData, fn) {
 
     var server = http.createServer(app);
     var primus = new Primus(server, socketConfig);
-    var agents = new Agents();
+    var agents = new Agents(
+        function (agent, callback) {
+            var _agent = new AgentModel(agent);
+            return _agent.save(callback);
+        },
+
+        function (username, callback) {
+            AgentModel.findOne({username: username}, callback);
+        });
     var noteConfig = {
         collection: 'note',
         que: thisQue,
@@ -100,7 +125,7 @@ function Server(instanceId, thisQue, authData, fn) {
     //    console.log('to que: ', que, '\\n', message);
     //};
 
-    primus.before('attachUser', AttachUserMock(authData));
+    primus.before('attachUser', AttachUserMock(MockUserList));
     primus.on('connection', function (spark) {
         var req = spark.request;
         if (!req.user) {
@@ -146,7 +171,6 @@ function Server(instanceId, thisQue, authData, fn) {
 }
 
 var server0, server1;
-var client0, client1;
 var messages = {
     toUser1: {
         to: {user: 'user1'},
@@ -157,15 +181,14 @@ var messages = {
         text: 'It is a great day out there!'
     }
 };
-var server0, server1;
 var serverSetups = {
     server0: function (done) {
         console.log('server0 is up and running...');
-        server0 = Server(0, '0', authData, done);
+        server0 = Server(0, '0', userMockData, done);
     },
     server1: function (done) {
         console.log('server1 is up and running...');
-        server1 = Server(1, '1', authData, done);
+        server1 = Server(1, '1', userMockData, done);
     }
 };
 
@@ -309,7 +332,7 @@ if (typeof describe !== 'undefined') {
                     {username: 'user2'}
                 ]
             };
-            NoteModel.addNote(note, function (err, doc) {
+            new NoteModel(note).save(function (err, doc) {
                 note = doc;
                 message = {
                     to: {note: doc._id},
@@ -380,7 +403,7 @@ if (typeof describe !== 'undefined') {
     });
 } else {
     // if the code is running without the mochaTest environment, run the following test to make sure the server/client connection is proper.
-    var server = Server(0, '0', authData.user1Stub, function () {
+    var server = Server(0, '0', userMockData[1], function () {
         console.log('server is running...')
     });
     var Socket = Primus.createSocket(socketConfig);

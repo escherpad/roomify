@@ -3,8 +3,6 @@ module.exports = function (grunt) {
     // Load tasks
     grunt.loadNpmTasks('grunt-mocha-test');
     grunt.loadNpmTasks('grunt-contrib-watch');
-    grunt.loadNpmTasks('grunt-jsdoc');
-    grunt.loadNpmTasks('grunt-apidoc');
 
     grunt.initConfig({
 
@@ -21,16 +19,6 @@ module.exports = function (grunt) {
             test: {
                 options: {
                     reporter: 'spec'
-                    // Require blanket wrapper here to instrument other required
-                    // files on the fly.
-                    //
-                    // NB. We cannot require blanket directly as it
-                    // detects that we are not running mocha cli and loads differently.
-                    //
-                    // NNB. As mocha is 'clever' enough to only run the tests once for
-                    // each file the following coverage task does not actually run any
-                    // tests which is why the coverage instrumentation has to be done here
-//                    require: 'coverage/blanket' //Need to fix later
                 },
                 src: [
                     'handlers/*.js',
@@ -87,51 +75,6 @@ module.exports = function (grunt) {
                     debounceDelay: 250
                 }
             },
-            jsdoc: {
-                files: [ 'server/tests/**/**/*.js',
-                    'server/**/*.js',
-                    'server/*.js',
-                    '!node_module',
-                    'server/RAEDME.md'
-                ],
-                tasks: ['jsdoc'],
-                options: {
-                    spawn: true,
-                    debounceDelay: 100
-                }
-
-            }
-        },
-        jsdoc: {
-            dist: {
-                src: [
-                    'server/*.js',
-                    'server/models/*js',
-                    'server/controllers/*js',
-                    'server/tests/integration/*.js',
-                    'server/tests/unit/*.js',
-                    'server/README.md'
-                ],
-                options: {
-                    destination: 'docs/server/',
-                    template: '../docstrap/template/',
-                    config: 'jsDoc.conf.json'
-                }
-            }
-        },
-        apidoc: {
-            server: {
-                src: "server/",
-                dest: "docs/api/",
-                options: {
-                    debug: true,
-                    includeFilters: [ ".*\\.js$" ],
-                    excludeFilters: [ "node_modules/" ],
-                    marked: {
-                        gfm: true
-                    }
-                }
-            }
         }
     });
     // On watch events, if the changed file is a test file then configure mochaTest to only
@@ -145,9 +88,9 @@ module.exports = function (grunt) {
     });
 
     grunt.registerTask('default', [
-//        'lint',
-        'test',
-        'jsdoc']);
+        // 'lint',
+        'test'
+    ]);
     grunt.registerTask('test', 'mochaTest:test');
     grunt.registerTask('watch-dev', 'watch:dev');
     grunt.registerTask('watch-database-reset', 'watch:mochaTest');
