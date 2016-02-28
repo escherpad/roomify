@@ -1,4 +1,10 @@
-/** Created by ge on 5/18/15. */
+/** Created by ge on 5/18/15.
+ *
+ * testSocketServer.js
+ * -------
+ * a minimal example implementation of a primus socket server
+ *
+ * */
 
 var http = require('http'),
     express = require('express'),

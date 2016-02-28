@@ -83,17 +83,16 @@ module.exports = function dispatch(thisQue, primus, agents, collections) {
         },
         collections: []
     };
-    var config, models;
-    for (var i = 0; i < collections.length; i++) {
-        config = collections[i];
-        models = config.models;
+    // not tested yet
+    collections.forEach(function(config){
+        var room = config.room;
         dispatch.collections.push({
             collection: config.collection,
             handler: function (message, id, local) {
                 if (!id) id = message.to[config.collection];
-                models.get(id, function (err, modelObj) {
+                room.get(id, function (err, modelObj) {
                     if (!modelObj) {
-                        models.createHandle(id, message);
+                        room.createHandle(id, message);
                     } else if (modelObj[config.keys.que] === thisQue) {
                         modelObj.transform(message, function (err, message) {
                             message.to.users = modelObj.getUsers();
@@ -109,6 +108,6 @@ module.exports = function dispatch(thisQue, primus, agents, collections) {
                 return this;
             }
         });
-    }
+    });
     return dispatch;
 };
